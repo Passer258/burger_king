@@ -6,6 +6,9 @@
   const now = getTaipeiNow();
   const taipeiHour = now.getUTCHours();
 
+  const val = (id) => document.getElementById(id).value.trim();
+  const checkMark = (checked) => (checked ? '✅' : '❌');
+
   // 日期：自動帶入今天日期 (M/D)
   const dateInput = document.getElementById('date');
   dateInput.value = `${now.getUTCMonth() + 1}/${now.getUTCDate()}`;
@@ -29,9 +32,6 @@
   if (taipeiHour >= 18) {
     tempEveningEl.checked = true;
   }
-
-  const val = (id) => document.getElementById(id).value.trim();
-  const checkMark = (checked) => (checked ? '✅' : '❌');
 
   function buildReportText() {
     const revenue = val('revenue') || '0';
@@ -97,21 +97,6 @@
     return sections.map((lines) => lines.join('\n')).join('\n\n');
   }
 
-  // 全部展開／全部收合
-  const allDetails = Array.from(document.querySelectorAll('main.container > details.card'));
-  const toggleAllBtn = document.getElementById('toggleAllBtn');
-  function refreshToggleAllLabel() {
-    const anyClosed = allDetails.some((d) => !d.open);
-    toggleAllBtn.textContent = anyClosed ? '全部展開' : '全部收合';
-  }
-  toggleAllBtn.addEventListener('click', () => {
-    const anyClosed = allDetails.some((d) => !d.open);
-    allDetails.forEach((d) => { d.open = anyClosed; });
-    refreshToggleAllLabel();
-  });
-  allDetails.forEach((d) => d.addEventListener('toggle', refreshToggleAllLabel));
-  refreshToggleAllLabel();
-
   const toastEl = document.getElementById('toast');
   let toastTimer = null;
   function showToast(message) {
@@ -122,7 +107,7 @@
   }
 
   // LINE 等App內建瀏覽器對 Web Share API／Clipboard API 支援不穩定，
-  // 因此以 execCommand 作為主要複製方式，並保留彈窗讓使用者可長按手動複製。
+  // 因此保留 execCommand 與彈窗作為備援，但主要仍優先使用原生分享選單。
   function tryLegacyCopy(text) {
     const textarea = document.createElement('textarea');
     textarea.value = text;
@@ -147,55 +132,95 @@
   const shareModalOverlay = document.getElementById('shareModalOverlay');
   const shareModalText = document.getElementById('shareModalText');
   function openShareModal(text) {
+    if (!shareModalOverlay || !shareModalText) return;
     shareModalText.value = text;
     shareModalOverlay.hidden = false;
     shareModalText.focus();
     shareModalText.select();
   }
   function closeShareModal() {
+    if (!shareModalOverlay) return;
     shareModalOverlay.hidden = true;
   }
-  document.getElementById('modalCloseBtn').addEventListener('click', closeShareModal);
-  document.getElementById('modalCopyBtn').addEventListener('click', () => {
-    shareModalText.focus();
-    shareModalText.select();
-    if (tryLegacyCopy(shareModalText.value)) {
-      showToast('已複製到剪貼簿');
-    } else {
-      showToast('請長按內容手動選取複製');
-    }
-  });
-  shareModalOverlay.addEventListener('click', (e) => {
-    if (e.target === shareModalOverlay) closeShareModal();
-  });
 
-  document.getElementById('shareBtn').addEventListener('click', async () => {
-    const text = buildReportText();
+  // 分享按鈕的核心邏輯優先綁定，避免其他區塊（如彈窗）初始化失敗時
+  // 連帶讓分享按鈕完全沒有反應。
+  const shareBtn = document.getElementById('shareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const text = buildReportText();
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-        return;
-      } catch (err) {
-        if (err && err.name === 'AbortError') return;
+      if (navigator.share) {
+        try {
+          await navigator.share({ text });
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
       }
-    }
 
-    if (tryLegacyCopy(text)) {
-      showToast('已複製到剪貼簿');
-      return;
-    }
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(text);
+      if (tryLegacyCopy(text)) {
         showToast('已複製到剪貼簿');
         return;
-      } catch (err) {
-        // 繼續往下開啟彈窗讓使用者手動複製
       }
-    }
 
-    openShareModal(text);
-  });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('已複製到剪貼簿');
+          return;
+        } catch (err) {
+          // 繼續往下開啟彈窗讓使用者手動複製
+        }
+      }
+
+      openShareModal(text);
+    });
+  }
+
+  // 以下為非必要功能（彈窗按鈕、全部展開/收合），個別以 try/catch 隔離，
+  // 避免任一區塊出錯時影響上方分享按鈕已完成的綁定。
+  try {
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalCopyBtn = document.getElementById('modalCopyBtn');
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeShareModal);
+    if (modalCopyBtn) {
+      modalCopyBtn.addEventListener('click', () => {
+        shareModalText.focus();
+        shareModalText.select();
+        if (tryLegacyCopy(shareModalText.value)) {
+          showToast('已複製到剪貼簿');
+        } else {
+          showToast('請長按內容手動選取複製');
+        }
+      });
+    }
+    if (shareModalOverlay) {
+      shareModalOverlay.addEventListener('click', (e) => {
+        if (e.target === shareModalOverlay) closeShareModal();
+      });
+    }
+  } catch (err) {
+    // 彈窗功能非必要，失敗不影響其他功能
+  }
+
+  try {
+    const allDetails = Array.from(document.querySelectorAll('main.container > details.card'));
+    const toggleAllBtn = document.getElementById('toggleAllBtn');
+    if (toggleAllBtn && allDetails.length) {
+      function refreshToggleAllLabel() {
+        const anyClosed = allDetails.some((d) => !d.open);
+        toggleAllBtn.textContent = anyClosed ? '全部展開' : '全部收合';
+      }
+      toggleAllBtn.addEventListener('click', () => {
+        const anyClosed = allDetails.some((d) => !d.open);
+        allDetails.forEach((d) => { d.open = anyClosed; });
+        refreshToggleAllLabel();
+      });
+      allDetails.forEach((d) => d.addEventListener('toggle', refreshToggleAllLabel));
+      refreshToggleAllLabel();
+    }
+  } catch (err) {
+    // 全部展開/收合為非必要功能，失敗不影響其他功能
+  }
 })();
