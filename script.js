@@ -121,6 +121,54 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
   }
 
+  // LINE 等App內建瀏覽器對 Web Share API／Clipboard API 支援不穩定，
+  // 因此以 execCommand 作為主要複製方式，並保留彈窗讓使用者可長按手動複製。
+  function tryLegacyCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-1000px';
+    textarea.style.left = '-1000px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    let success = false;
+    try {
+      success = document.execCommand('copy');
+    } catch (err) {
+      success = false;
+    }
+    document.body.removeChild(textarea);
+    return success;
+  }
+
+  const shareModalOverlay = document.getElementById('shareModalOverlay');
+  const shareModalText = document.getElementById('shareModalText');
+  function openShareModal(text) {
+    shareModalText.value = text;
+    shareModalOverlay.hidden = false;
+    shareModalText.focus();
+    shareModalText.select();
+  }
+  function closeShareModal() {
+    shareModalOverlay.hidden = true;
+  }
+  document.getElementById('modalCloseBtn').addEventListener('click', closeShareModal);
+  document.getElementById('modalCopyBtn').addEventListener('click', () => {
+    shareModalText.focus();
+    shareModalText.select();
+    if (tryLegacyCopy(shareModalText.value)) {
+      showToast('已複製到剪貼簿');
+    } else {
+      showToast('請長按內容手動選取複製');
+    }
+  });
+  shareModalOverlay.addEventListener('click', (e) => {
+    if (e.target === shareModalOverlay) closeShareModal();
+  });
+
   document.getElementById('shareBtn').addEventListener('click', async () => {
     const text = buildReportText();
 
@@ -133,11 +181,21 @@
       }
     }
 
-    try {
-      await navigator.clipboard.writeText(text);
+    if (tryLegacyCopy(text)) {
       showToast('已複製到剪貼簿');
-    } catch (err) {
-      showToast('複製失敗，請手動複製');
+      return;
     }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('已複製到剪貼簿');
+        return;
+      } catch (err) {
+        // 繼續往下開啟彈窗讓使用者手動複製
+      }
+    }
+
+    openShareModal(text);
   });
 })();
