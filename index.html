@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>753 門市日報表</title>
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">🍔 753 門市日報表</div>
+  </header>
+
+  <main class="container">
+
+    <details class="card" open>
+      <summary class="card-title">基本資料</summary>
+      <div class="card-body">
+        <div class="row">
+          <div class="field">
+            <label>門市</label>
+            <input type="text" value="753" disabled>
+          </div>
+          <div class="field">
+            <label>日期</label>
+            <input type="text" id="date" disabled>
+          </div>
+        </div>
+        <div class="field">
+          <label>時段</label>
+          <div class="segmented" id="shiftPeriod">
+            <button type="button" class="seg-btn active" data-value="1400">1400</button>
+            <button type="button" class="seg-btn" data-value="2000">2000</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary class="card-title">業績數據</summary>
+      <div class="card-body">
+        <div class="field">
+          <label>業績</label>
+          <input type="number" inputmode="numeric" id="revenue" placeholder="請輸入業績">
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>TC</label>
+            <input type="number" inputmode="numeric" id="tc" placeholder="0">
+          </div>
+          <div class="field">
+            <label>TA</label>
+            <input type="number" inputmode="numeric" id="ta" placeholder="0">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary class="card-title">通路業績</summary>
+      <div class="card-body">
+        <div class="row">
+          <div class="field">
+            <label>官網外帶</label>
+            <input type="number" inputmode="numeric" id="webTakeout" placeholder="0">
+          </div>
+          <div class="field">
+            <label>自送</label>
+            <input type="number" inputmode="numeric" id="selfDelivery" placeholder="0">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Panda</label>
+            <input type="number" inputmode="numeric" id="panda" placeholder="0">
+          </div>
+          <div class="field">
+            <label>Uber</label>
+            <input type="number" inputmode="numeric" id="uber" placeholder="0">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary class="card-title">加購 / 促銷</summary>
+      <div class="card-body">
+        <div class="row">
+          <div class="field">
+            <label>10🐔</label>
+            <input type="number" inputmode="numeric" id="chicken10" placeholder="0">
+          </div>
+          <div class="field">
+            <label>點心加購59$</label>
+            <input type="number" inputmode="numeric" id="snack59" placeholder="0">
+          </div>
+          <div class="field">
+            <label>川椒</label>
+            <input type="number" inputmode="numeric" id="sichuan" placeholder="0">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary class="card-title">人力</summary>
+      <div class="card-body">
+        <div class="row">
+          <div class="field">
+            <label>早班</label>
+            <input type="text" id="staffMorning" value="1+1">
+          </div>
+          <div class="field">
+            <label>晚班</label>
+            <input type="text" id="staffEvening" value="1+2">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary class="card-title">時數</summary>
+      <div class="card-body">
+        <div class="row">
+          <div class="field">
+            <label>本日預估</label>
+            <input type="number" inputmode="decimal" id="hoursEstimate" value="34">
+          </div>
+          <div class="field">
+            <label>早班實際</label>
+            <input type="number" inputmode="decimal" id="hoursMorningActual" value="9">
+          </div>
+          <div class="field">
+            <label>晚班總時數</label>
+            <input type="number" inputmode="decimal" id="hoursEveningTotal" placeholder="請輸入">
+          </div>
+        </div>
+        <div class="field">
+          <label>訓練時數</label>
+          <input type="number" inputmode="decimal" id="hoursTraining" value="0">
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary class="card-title">測溫</summary>
+      <div class="card-body">
+        <div class="checkbox-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="tempMorning" checked>
+            <span>早班</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="tempEvening">
+            <span>晚班</span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <button type="button" id="toggleAllBtn" class="toggle-all-btn">全部收合</button>
+
+  </main>
+
+  <div class="share-bar">
+    <button type="button" id="shareBtn" class="share-btn">📤 快速分享</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js?v=2"></script>
+</body>
+</html>
