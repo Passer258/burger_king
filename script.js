@@ -143,12 +143,27 @@
     shareModalOverlay.hidden = true;
   }
 
+  // LINE內建瀏覽器的 Web Share API 支援不穩定（常直接失敗、退回複製），
+  // 因此偵測到在LINE內時改用LINE官方的分享網址格式，
+  // LINE會直接攔截並開啟原生的「轉傳」選單，不依賴 Web Share API。
+  function isLineInAppBrowser() {
+    return /\bLine\//i.test(navigator.userAgent);
+  }
+  function shareViaLine(text) {
+    window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(text);
+  }
+
   // 分享按鈕的核心邏輯優先綁定，避免其他區塊（如彈窗）初始化失敗時
   // 連帶讓分享按鈕完全沒有反應。
   const shareBtn = document.getElementById('shareBtn');
   if (shareBtn) {
     shareBtn.addEventListener('click', async () => {
       const text = buildReportText();
+
+      if (isLineInAppBrowser()) {
+        shareViaLine(text);
+        return;
+      }
 
       if (navigator.share) {
         try {
